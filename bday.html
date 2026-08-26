@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Birthday Heart Tree</title>
+
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin: 0;
+
+    min-height: 100vh;
+
+    background: #171522;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-family: "Courier New", monospace;
+
+}
+
+
+.card {
+
+    position: relative;
+
+    width: min(900px, 92vw);
+
+    height: min(600px, 85vh);
+
+    background: #ffffff;
+
+    overflow: hidden;
+
+    border-radius: 2px;
+
+}
+
+
+canvas {
+
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+}
+
+
+/* =====================================================
+   MESSAGE
+   ===================================================== */
+
+.message {
+
+    position: absolute;
+
+    left: 7%;
+
+    top: 25%;
+
+    width: 290px;
+
+    color: #222;
+
+    font-size: 13px;
+
+    line-height: 1.55;
+
+    opacity: 0;
+
+    transform: translateX(-45px);
+
+    pointer-events: none;
+
+}
+
+
+.message.show {
+
+    animation:
+        messageIn 1.5s ease forwards;
+
+}
+
+
+.name {
+
+    color: #e34d79;
+
+    font-size: 18px;
+
+    font-weight: bold;
+
+}
+
+
+.birthday {
+
+    margin-top: 18px;
+
+    color: #e34d79;
+
+    font-size: 19px;
+
+    font-weight: bold;
+
+}
+
+
+@keyframes messageIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateX(-45px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateX(0);
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="card">
+
+    <canvas id="canvas"></canvas>
+
+
+    <div
+        class="message"
+        id="message"
+    >
+
+        <div class="name">
+            Hey Birthday Girl! ❤️
+        </div>
+
+        <br>
+
+        May your birthday be filled
+        with happiness, love and
+        beautiful memories.
+
+        <br><br>
+
+        You deserve all the wonderful
+        things in the world.
+
+        <br><br>
+
+        Wishing you a beautiful
+        and magical birthday!
+
+        <div class="birthday">
+            Happy Birthday! 🎂❤️
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   CANVAS
+   ===================================================== */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const message =
+    document.getElementById("message");
+
+
+let W = 0;
+let H = 0;
+
+let particles = [];
+
+
+/* =====================================================
+   COLORS
+   ===================================================== */
+
+const colors = [
+
+    "#ff477e",
+    "#ff5c8a",
+    "#ff7096",
+    "#ff8fab",
+    "#ffb3c6",
+
+    "#ffd166",
+    "#ffca3a",
+
+    "#f72585",
+    "#c77dff",
+
+    "#ff7b00",
+    "#ff4d6d"
+
+];
+
+
+/* =====================================================
+   RESIZE
+   ===================================================== */
+
+function resize() {
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+
+    W = rect.width;
+
+    H = rect.height;
+
+
+    const dpr =
+        window.devicePixelRatio || 1;
+
+
+    canvas.width =
+        W * dpr;
+
+    canvas.height =
+        H * dpr;
+
+
+    ctx.setTransform(
+
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+
+    );
+
+
+    createParticles();
+
+}
+
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+
+/* =====================================================
+   EASING
+   ===================================================== */
+
+function easeOut(t) {
+
+    return 1 -
+        Math.pow(
+            1 - t,
+            3
+        );
+
+}
+
+
+function easeInOut(t) {
+
+    if (t < 0.5) {
+
+        return 2 * t * t;
+
+    }
+
+
+    return 1 -
+        Math.pow(
+            -2 * t + 2,
+            2
+        ) / 2;
+
+}
+
+
+/* =====================================================
+   REAL HEART OUTLINE
+   =====================================================
+
+   This creates a true heart silhouette.
+
+   The individual leaves are then placed
+   INSIDE this outline.
+
+   This is the important part that makes
+   the whole tree actually look like ❤️.
+   ===================================================== */
+
+function createHeartOutline() {
+
+    const points = [];
+
+
+    /*
+        Standard parametric heart.
+
+        x = 16 sin³(t)
+
+        y =
+        13 cos(t)
+        - 5 cos(2t)
+        - 2 cos(3t)
+        - cos(4t)
+    */
+
+    const total =
+        360;
+
+
+    for (
+        let i = 0;
+        i <= total;
+        i++
+    ) {
+
+        const t =
+            (Math.PI * 2 * i) /
+            total;
+
+
+        const x =
+            16 *
+            Math.pow(
+                Math.sin(t),
+                3
+            );
+
+
+        const y =
+
+            13 *
+            Math.cos(t)
+
+            -
+
+            5 *
+            Math.cos(
+                2 * t
+            )
+
+            -
+
+            2 *
+            Math.cos(
+                3 * t
+            )
+
+            -
+
+            Math.cos(
+                4 * t
+            );
+
+
+        points.push({
+            x: x,
+            y: y
+        });
+
+    }
+
+
+    return points;
+
+}
+
+
+/* =====================================================
+   POINT INSIDE POLYGON
+   ===================================================== */
+
+function pointInsideHeart(
+    x,
+    y,
+    polygon
+) {
+
+    let inside = false;
+
+
+    for (
+        let i = 0,
+        j = polygon.length - 1;
+
+        i < polygon.length;
+
+        j = i++
+    ) {
+
+        const xi =
+            polygon[i].x;
+
+        const yi =
+            polygon[i].y;
+
+
+        const xj =
+            polygon[j].x;
+
+        const yj =
+            polygon[j].y;
+
+
+        const intersect =
+
+            (
+                yi > y
+            ) !==
+            (
+                yj > y
+            )
+
+            &&
+
+            (
+                x <
+                (
+                    xj - xi
+                ) *
+                (
+                    y - yi
+                ) /
+                (
+                    yj - yi
+                ) +
+                xi
+            );
+
+
+        if (intersect) {
+
+            inside = !inside;
+
+        }
+
+    }
+
+
+    return inside;
+
+}
+
+
+/* =====================================================
+   CREATE HEART LEAVES
+   ===================================================== */
+
+function createParticles() {
+
+    particles = [];
+
+
+    /*
+        Overall heart size.
+
+        Increase this number downward
+        if you want the entire heart
+        smaller.
+
+        42 = current size
+        38 = bigger
+        45 = smaller
+    */
+
+    const scale =
+        Math.min(W, H) / 42;
+
+
+    /*
+        Create the actual heart outline.
+    */
+
+    const heart =
+        createHeartOutline();
+
+
+    /*
+        Find the bounds of the heart.
+    */
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+
+    heart.forEach(
+        function(point) {
+
+            minX =
+                Math.min(
+                    minX,
+                    point.x
+                );
+
+            maxX =
+                Math.max(
+                    maxX,
+                    point.x
+                );
+
+            minY =
+                Math.min(
+                    minY,
+                    point.y
+                );
+
+            maxY =
+                Math.max(
+                    maxY,
+                    point.y
+                );
+
+        }
+    );
+
+
+    /*
+        Distance between individual leaves.
+
+        This controls density, NOT
+        the overall heart shape.
+    */
+
+    const spacing = 1.29;
+
+
+    /*
+        Slightly shrink the heart's
+        internal area so the outline
+        remains clean with large leaves.
+    */
+
+    const padding = 0.45;
+
+
+    for (
+        let x = minX + padding;
+        x <= maxX - padding;
+        x += spacing
+    ) {
+
+        for (
+            let y = minY + padding;
+            y <= maxY - padding;
+            y += spacing
+        ) {
+
+
+            /*
+                Small random offset.
+            */
+
+            const px =
+                x +
+                (
+                    Math.random() -
+                    0.5
+                ) *
+                0.28;
+
+
+            const py =
+                y +
+                (
+                    Math.random() -
+                    0.5
+                ) *
+                0.28;
+
+
+            /*
+                Check whether this point
+                is actually inside the heart.
+            */
+
+            if (
+                pointInsideHeart(
+                    px,
+                    py,
+                    heart
+                )
+            ) {
+
+
+                /*
+                    Occasionally skip a leaf.
+
+                    This gives the tree some
+                    natural variation.
+                */
+
+                if (
+                    Math.random() > 0.94
+                ) {
+
+                    continue;
+
+                }
+
+
+                particles.push({
+
+                    /*
+                        FINAL POSITION
+                    */
+
+                    targetX:
+                        px * scale,
+
+
+                    /*
+                        Invert Y because
+                        canvas Y goes downward.
+                    */
+
+                    targetY:
+                        -py * scale,
+
+
+                    x: 0,
+
+                    y: 0,
+
+
+                    /*
+                        INDIVIDUAL HEART SIZE
+
+                        Keep this as-is.
+                    */
+
+                    size:
+                        6.3,
+
+
+                    color:
+                        colors[
+                            Math.floor(
+                                Math.random() *
+                                colors.length
+                            )
+                        ],
+
+
+                    /*
+                        Animation delay.
+                    */
+
+                    delay:
+                        Math.random() *
+                        2.5,
+
+
+                    /*
+                        Floating animation.
+                    */
+
+                    random:
+                        Math.random() *
+                        Math.PI *
+                        2,
+
+
+                    /*
+                        Rotation.
+                    */
+
+                    rotation:
+                        Math.random() *
+                        Math.PI *
+                        2
+
+                });
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   DRAW TREE
+   ===================================================== */
+
+function drawTree(
+    treeX,
+    progress
+) {
+
+    /*
+        Bottom of trunk.
+    */
+
+    const bottom =
+        H * 0.88;
+
+
+    /*
+        Top of branches.
+
+        This is lower than before,
+        preventing the heart from
+        touching the top edge.
+    */
+
+    const top =
+        H * 0.40;
+
+
+    const stemTop =
+
+        bottom -
+
+        (
+            bottom -
+            top
+        ) *
+
+        progress;
+
+
+    ctx.save();
+
+
+    ctx.lineCap =
+        "round";
+
+
+    /* =================================================
+       SOFT STEM
+       ================================================= */
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        treeX,
+        bottom
+    );
+
+
+    ctx.lineTo(
+        treeX,
+        stemTop
+    );
+
+
+    ctx.strokeStyle =
+        "#f4c8d1";
+
+
+    ctx.lineWidth =
+        8;
+
+
+    ctx.stroke();
+
+
+    /* =================================================
+       MAIN STEM
+       ================================================= */
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        treeX,
+        bottom
+    );
+
+
+    ctx.lineTo(
+        treeX,
+        stemTop
+    );
+
+
+    ctx.strokeStyle =
+        "#e6a0b2";
+
+
+    /*
+        MAIN STEM THICKNESS
+    */
+
+    ctx.lineWidth =
+        4;
+
+
+    ctx.stroke();
+
+
+    /* =================================================
+       BRANCHES
+       ================================================= */
+
+    if (
+        progress > 0.25
+    ) {
+
+
+        const p =
+
+            Math.min(
+                1,
+                (
+                    progress -
+                    0.25
+                ) /
+                0.75
+            );
+
+
+        /*
+            LEFT TOP
+        */
+
+        drawBranch(
+
+            treeX,
+            top + 115,
+
+            treeX - 38,
+            top + 70,
+
+            treeX - 82,
+            top + 45,
+
+            p
+
+        );
+
+
+        /*
+            RIGHT TOP
+        */
+
+        drawBranch(
+
+            treeX,
+            top + 115,
+
+            treeX + 38,
+            top + 70,
+
+            treeX + 82,
+            top + 45,
+
+            p
+
+        );
+
+
+        /*
+            LEFT MIDDLE
+        */
+
+        drawBranch(
+
+            treeX,
+            top + 160,
+
+            treeX - 55,
+            top + 120,
+
+            treeX - 110,
+            top + 90,
+
+            p
+
+        );
+
+
+        /*
+            RIGHT MIDDLE
+        */
+
+        drawBranch(
+
+            treeX,
+            top + 160,
+
+            treeX + 55,
+            top + 120,
+
+            treeX + 110,
+            top + 90,
+
+            p
+
+        );
+
+
+        /*
+            LEFT INNER
+        */
+
+        drawBranch(
+
+            treeX - 15,
+            top + 80,
+
+            treeX - 48,
+            top + 48,
+
+            treeX - 90,
+            top + 30,
+
+            p
+
+        );
+
+
+        /*
+            RIGHT INNER
+        */
+
+        drawBranch(
+
+            treeX + 15,
+            top + 80,
+
+            treeX + 48,
+            top + 48,
+
+            treeX + 90,
+            top + 30,
+
+            p
+
+        );
+
+    }
+
+
+    /* =================================================
+       EXTRA LOWER BRANCHES
+       ================================================= */
+
+    if (
+        progress > 0.55
+    ) {
+
+
+        const p =
+
+            Math.min(
+                1,
+                (
+                    progress -
+                    0.55
+                ) /
+                0.45
+            );
+
+
+        drawBranch(
+
+            treeX - 55,
+            top + 90,
+
+            treeX - 90,
+            top + 60,
+
+            treeX - 135,
+            top + 45,
+
+            p
+
+        );
+
+
+        drawBranch(
+
+            treeX + 55,
+            top + 90,
+
+            treeX + 90,
+            top + 60,
+
+            treeX + 135,
+            top + 45,
+
+            p
+
+        );
+
+
+        drawBranch(
+
+            treeX - 70,
+            top + 130,
+
+            treeX - 105,
+            top + 105,
+
+            treeX - 145,
+            top + 90,
+
+            p
+
+        );
+
+
+        drawBranch(
+
+            treeX + 70,
+            top + 130,
+
+            treeX + 105,
+            top + 105,
+
+            treeX + 145,
+            top + 90,
+
+            p
+
+        );
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   DRAW BRANCH
+   ===================================================== */
+
+function drawBranch(
+
+    x1,
+    y1,
+
+    x2,
+    y2,
+
+    x3,
+    y3,
+
+    progress
+
+) {
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        x1,
+        y1
+    );
+
+
+    const endX =
+
+        x1 +
+        (
+            x3 -
+            x1
+        ) *
+        progress;
+
+
+    const endY =
+
+        y1 +
+        (
+            y3 -
+            y1
+        ) *
+        progress;
+
+
+    const controlX =
+
+        x1 +
+        (
+            x2 -
+            x1
+        ) *
+        progress;
+
+
+    const controlY =
+
+        y1 +
+        (
+            y2 -
+            y1
+        ) *
+        progress;
+
+
+    ctx.quadraticCurveTo(
+
+        controlX,
+        controlY,
+
+        endX,
+        endY
+
+    );
+
+
+    /*
+        SAME WIDTH AS MAIN STEM
+    */
+
+    ctx.strokeStyle =
+        "#e6a0b2";
+
+
+    ctx.lineWidth =
+        4;
+
+
+    ctx.lineCap =
+        "round";
+
+
+    ctx.stroke();
+
+}
+
+
+/* =====================================================
+   DRAW INDIVIDUAL HEART LEAF
+   ===================================================== */
+
+function drawHeartParticle(
+
+    x,
+    y,
+
+    size,
+
+    color,
+
+    rotation,
+
+    alpha
+
+) {
+
+    ctx.save();
+
+
+    ctx.translate(
+        x,
+        y
+    );
+
+
+    ctx.rotate(
+        rotation
+    );
+
+
+    ctx.globalAlpha =
+        alpha;
+
+
+    ctx.fillStyle =
+        color;
+
+
+    ctx.beginPath();
+
+
+    /*
+        Bottom point.
+    */
+
+    ctx.moveTo(
+
+        0,
+
+        size * 0.95
+
+    );
+
+
+    /*
+        LEFT LOBE
+    */
+
+    ctx.bezierCurveTo(
+
+        -size * 1.40,
+        size * 0.05,
+
+        -size * 0.95,
+        -size * 1.05,
+
+        0,
+        -size * 0.30
+
+    );
+
+
+    /*
+        RIGHT LOBE
+    */
+
+    ctx.bezierCurveTo(
+
+        size * 0.95,
+        -size * 1.05,
+
+        size * 1.40,
+        size * 0.05,
+
+        0,
+        size * 0.95
+
+    );
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   DRAW HEART LEAVES
+   ===================================================== */
+
+function drawParticles(
+
+    time,
+
+    heartProgress,
+
+    treeX
+
+) {
+
+    particles.forEach(
+
+        function(p) {
+
+
+            /*
+                Each leaf has a different
+                starting time.
+            */
+
+            let progress =
+
+                heartProgress *
+                3.0
+                -
+                p.delay;
+
+
+            progress =
+
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        progress
+                    )
+                );
+
+
+            progress =
+                easeOut(
+                    progress
+                );
+
+
+            /*
+                Leaves start at the top
+                of the stem.
+            */
+
+            const startX =
+                treeX;
+
+
+            const startY =
+                H * 0.40;
+
+
+            /*
+                Move into final heart
+                position.
+            */
+
+            p.x =
+
+                startX +
+
+                p.targetX *
+                progress;
+
+
+            p.y =
+
+                startY +
+
+                p.targetY *
+                progress;
+
+
+            /*
+                Gentle movement once
+                the heart is formed.
+            */
+
+            if (
+                progress > 0.85
+            ) {
+
+                p.x +=
+
+                    Math.sin(
+                        time * 1.8 +
+                        p.random
+                    ) *
+                    0.8;
+
+
+                p.y +=
+
+                    Math.cos(
+                        time * 1.6 +
+                        p.random
+                    ) *
+                    0.8;
+
+            }
+
+
+            const size =
+
+                p.size *
+                progress;
+
+
+            if (
+                size <= 0
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+                DRAW INDIVIDUAL HEART
+            */
+
+            drawHeartParticle(
+
+                p.x,
+
+                p.y,
+
+                size * 2.2,
+
+                p.color,
+
+                p.rotation,
+
+                progress
+
+            );
+
+        }
+
+    );
+
+}
+
+
+/* =====================================================
+   SMALL FLOATING HEARTS
+   ===================================================== */
+
+function drawSparkles(
+
+    time,
+
+    progress,
+
+    treeX
+
+) {
+
+    if (
+        progress < 0.90
+    ) {
+
+        return;
+
+    }
+
+
+    const centerX =
+        treeX;
+
+
+    const centerY =
+        H * 0.38;
+
+
+    for (
+        let i = 0;
+        i < 14;
+        i++
+    ) {
+
+
+        const angle =
+
+            time * 0.3 +
+            i * 0.8;
+
+
+        const radius =
+
+            145 +
+            Math.sin(
+                time * 2 +
+                i
+            ) *
+            18;
+
+
+        const x =
+
+            centerX +
+
+            Math.cos(angle) *
+            radius;
+
+
+        const y =
+
+            centerY +
+
+            Math.sin(angle) *
+            radius *
+            0.65;
+
+
+        const alpha =
+
+            (
+                Math.sin(
+                    time * 3 +
+                    i
+                ) +
+                1
+            ) /
+            2;
+
+
+        drawHeartParticle(
+
+            x,
+
+            y,
+
+            1.5,
+
+            colors[
+                i %
+                colors.length
+            ],
+
+            angle,
+
+            alpha * 0.6
+
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   MAIN ANIMATION
+   ===================================================== */
+
+const start =
+    performance.now();
+
+
+function animate(now) {
+
+
+    const time =
+
+        (
+            now -
+            start
+        ) /
+        1000;
+
+
+    ctx.clearRect(
+
+        0,
+        0,
+        W,
+        H
+
+    );
+
+
+    /* =================================================
+       PHASE 1
+       STEM GROWS
+       ================================================= */
+
+    let treeProgress =
+
+        Math.min(
+
+            1,
+
+            time / 3
+
+        );
+
+
+    treeProgress =
+        easeOut(
+            treeProgress
+        );
+
+
+    /* =================================================
+       PHASE 2
+       HEART FORMS
+       ================================================= */
+
+    let heartProgress =
+
+        Math.max(
+
+            0,
+
+            Math.min(
+
+                1,
+
+                (
+                    time -
+                    2.5
+                ) /
+                4.5
+
+            )
+
+        );
+
+
+    /* =================================================
+       PHASE 3
+       TREE MOVES RIGHT
+       ================================================= */
+
+    let moveProgress =
+
+        Math.max(
+
+            0,
+
+            Math.min(
+
+                1,
+
+                (
+                    time -
+                    7
+                ) /
+                2
+
+            )
+
+        );
+
+
+    moveProgress =
+        easeInOut(
+            moveProgress
+        );
+
+
+    /*
+        Start in center.
+    */
+
+    const centerX =
+        W * 0.50;
+
+
+    /*
+        Finish on right.
+    */
+
+    const finalX =
+        W * 0.73;
+
+
+    const treeX =
+
+        centerX +
+
+        (
+            finalX -
+            centerX
+        ) *
+
+        moveProgress;
+
+
+    /*
+        Draw tree.
+    */
+
+    drawTree(
+
+        treeX,
+
+        treeProgress
+
+    );
+
+
+    /*
+        Draw heart leaves.
+    */
+
+    drawParticles(
+
+        time,
+
+        heartProgress,
+
+        treeX
+
+    );
+
+
+    /*
+        Draw floating hearts.
+    */
+
+    drawSparkles(
+
+        time,
+
+        heartProgress,
+
+        treeX
+
+    );
+
+
+    /*
+        Show birthday message.
+    */
+
+    if (
+
+        time > 8 &&
+
+        !message.classList.contains(
+            "show"
+        )
+
+    ) {
+
+        message.classList.add(
+            "show"
+        );
+
+    }
+
+
+    requestAnimationFrame(
+        animate
+    );
+
+}
+
+
+/* =====================================================
+   START
+   ===================================================== */
+
+resize();
+
+requestAnimationFrame(
+    animate
+);
+
+</script>
+
+</body>
+</html>
